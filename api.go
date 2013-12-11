@@ -6,7 +6,8 @@ var DefaultUserAgent = "GoRequests"
 
 func Request(method, url string, data interface{}) *HttpRequest {
 	var r = NewRequest(method, url, data)
-	r.AddHeader("User-Agent", DefaultUserAgent)
+	r.Header("User-Agent", DefaultUserAgent)
+	r.Header("Accept", "*/*")
 	return r
 }
 

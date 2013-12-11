@@ -18,23 +18,23 @@ type HttpRequest struct {
 	ReadWriteTimeout time.Duration
 }
 
-func (r *HttpRequest) AddHeader(key, value string) *HttpRequest {
+func (r *HttpRequest) Header(key, value string) *HttpRequest {
 	r.Req.Header.Set(key, value)
 	return r
 }
 
-func (r *HttpRequest) AddParam(key, value string) *HttpRequest {
+func (r *HttpRequest) Param(key, value string) *HttpRequest {
 	r.params[key] = value
 	return r
 }
 
-func (r *HttpRequest) SetTimeout(connectTimeout, readWriteTimeout time.Duration) *HttpRequest {
+func (r *HttpRequest) Timeout(connectTimeout, readWriteTimeout time.Duration) *HttpRequest {
 	r.ConnectTimeout = connectTimeout
 	r.ReadWriteTimeout = readWriteTimeout
 	return r
 }
 
-func (r *HttpRequest) SetBody(data interface{}) *HttpRequest {
+func (r *HttpRequest) Body(data interface{}) *HttpRequest {
 	rd, ok := data.(io.Reader)
 	if !ok && data != nil {
 		switch v := data.(type) {
@@ -54,10 +54,10 @@ func (r *HttpRequest) SetBody(data interface{}) *HttpRequest {
 	return r
 }
 
-func (r *HttpRequest) Send() (*HttpResponse, error) {
+func (r *HttpRequest) encodeUrl() error {
 	newUrl, err := url.Parse(r.URL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if r.params != nil && len(r.params) > 0 {
 		params := newUrl.Query()
@@ -70,7 +70,15 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 		newUrl.Scheme = "http"
 	}
 	r.Req.URL = newUrl
+	return nil
+}
 
+func (r *HttpRequest) Send() (*HttpResponse, error) {
+	err := r.encodeUrl()
+	if err != nil {
+		return nil, err
+	}
+	
 	client := &http.Client{
 		Transport: &http.Transport{
 			Dial: TimeoutDialer(r.ConnectTimeout, r.ReadWriteTimeout),
@@ -97,7 +105,7 @@ func NewRequest(method, url string, data interface{}) *HttpRequest {
 	}
 	// URL will be validated in send():
 	req, _ := http.NewRequest(method, url, rd)
-	req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Accept", "*/*")
 	return &HttpRequest{
 		url,
 		req,
