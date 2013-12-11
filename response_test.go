@@ -1,15 +1,15 @@
 package requests
 
 import (
-	"testing"
-	"net/http"
 	"bufio"
+	"net/http"
 	"strings"
+	"testing"
 )
 
 var newResponseTests = []struct {
 	rawResp string
-	status int
+	status  int
 }{
 	{`HTTP/1.0 200 OK
 Connection: close

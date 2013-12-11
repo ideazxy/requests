@@ -78,7 +78,7 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			Dial: TimeoutDialer(r.ConnectTimeout, r.ReadWriteTimeout),

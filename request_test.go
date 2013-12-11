@@ -1,8 +1,8 @@
 package requests
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestHeader(t *testing.T) {
@@ -40,7 +40,7 @@ func TestEncodeUrl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("#1: %v", err)
 	}
-	queries:= req.Req.URL.Query()
+	queries := req.Req.URL.Query()
 	v, ok := queries["k1"]
 	if !ok {
 		t.Fatal("#1: k1 not found")
@@ -55,7 +55,7 @@ func TestEncodeUrl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("#2: %v", err)
 	}
-	queries= req.Req.URL.Query()
+	queries = req.Req.URL.Query()
 	v, ok = queries["k1"]
 	if !ok {
 		t.Fatal("#2: k1 not found")
@@ -70,14 +70,14 @@ func TestEncodeUrl(t *testing.T) {
 	if v[0] != "v0" {
 		t.Fatal("#2: k0 => %s, want v0", v)
 	}
-	
+
 	req = NewRequest("GET", "http://a.b?k0=v0", nil)
 	req.Param("k1", "vv1")
 	err = req.encodeUrl()
 	if err != nil {
 		t.Fatalf("#3: %v", err)
 	}
-	queries= req.Req.URL.Query()
+	queries = req.Req.URL.Query()
 	v, ok = queries["k1"]
 	if !ok {
 		t.Fatal("#3: k1 not found")
