@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -42,8 +43,6 @@ func (r *HttpRequest) Body(data interface{}) *HttpRequest {
 			rd = bytes.NewBufferString(v)
 		case []byte:
 			rd = bytes.NewBuffer(v)
-		case *[]byte:
-			rd = bytes.NewBuffer(*v)
 		}
 	}
 	rc, ok := rd.(io.ReadCloser)
@@ -51,6 +50,18 @@ func (r *HttpRequest) Body(data interface{}) *HttpRequest {
 		rc = ioutil.NopCloser(rd)
 	}
 	r.Req.Body = rc
+
+	if rd != nil {
+		switch v := rd.(type) {
+		case *bytes.Buffer:
+			r.Req.ContentLength = int64(v.Len())
+		case *bytes.Reader:
+			r.Req.ContentLength = int64(v.Len())
+		case *strings.Reader:
+			r.Req.ContentLength = int64(v.Len())
+		}
+	}
+
 	return r
 }
 
@@ -92,26 +103,17 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 }
 
 func NewRequest(method, url string, data interface{}) *HttpRequest {
-	rd, ok := data.(io.Reader)
-	if !ok && data != nil {
-		switch v := data.(type) {
-		case string:
-			rd = bytes.NewBufferString(v)
-		case []byte:
-			rd = bytes.NewBuffer(v)
-		case *[]byte:
-			rd = bytes.NewBuffer(*v)
-		}
-	}
 	// URL will be validated in send():
-	req, _ := http.NewRequest(method, url, rd)
-	// req.Header.Set("Accept", "*/*")
-	return &HttpRequest{
+	req, _ := http.NewRequest(method, url, nil)
+
+	r := &HttpRequest{
 		url,
 		req,
 		make(map[string]string),
 		60 * time.Second,
 		60 * time.Second}
+	r.Body(data)
+	return r
 }
 
 func TimeoutDialer(cTimeout time.Duration, rwTimeout time.Duration) func(net, addr string) (net.Conn, error) {
