@@ -1,41 +1,20 @@
 package requests
 
 import (
-	"bytes"
 	"testing"
+	"net/url"
+	"fmt"
+	"io/ioutil"
 )
 
-func TestHeader(t *testing.T) {
-	var buf bytes.Buffer
-	req := NewRequest("GET", "http://a.b", nil)
-	req.Header("Content-Type", "image/png")
-	req.Req.Header.Write(&buf)
-	want := "Content-Type: image/png\r\n"
-	if buf.String() != want {
-		t.Fatalf("#1 : %s, want: %s", buf.String(), want)
-	}
-	buf.Reset()
-
-	req.Header("Content-Type", "image/jpeg")
-	req.Req.Header.Write(&buf)
-	want = "Content-Type: image/jpeg\r\n"
-	if buf.String() != want {
-		t.Fatalf("#2 : %s, want: %s", buf.String(), want)
-	}
-	buf.Reset()
-
-	req.Header("key", "value")
-	req.Req.Header.Write(&buf)
-	want = "Content-Type: image/jpeg\r\nKey: value\r\n"
-	if buf.String() != want {
-		t.Fatalf("#3 : %s, want: %s.", buf.String(), want)
-	}
-	buf.Reset()
-}
-
 func TestEncodeUrl(t *testing.T) {
-	req := NewRequest("GET", "http://a.b", nil)
-	req.Param("k1", "v1")
+	req := NewRequest("GET", "http://a.b?k=v")
+	expected := url.Values{"k": {"v"}}
+	if fmt.Sprintf("%v", req.Params) != fmt.Sprintf("%v", expected) {
+		t.Fatalf("#0: Params => %v, expected: %v", req.Params, expected)
+	}
+
+	req.AddParam("k1", "v1")
 	err := req.encodeUrl()
 	if err != nil {
 		t.Fatalf("#1: %v", err)
@@ -45,12 +24,11 @@ func TestEncodeUrl(t *testing.T) {
 	if !ok {
 		t.Fatal("#1: k1 not found")
 	}
-	if v[0] != "v1" {
-		t.Fatal("#1: k1 => %s, want v1", v)
+	if fmt.Sprintf("%v", v) != "[v1]" {
+		t.Fatal("#1: Req.URL.Query()[k1] => %v, want: [v1]", v)
 	}
 
-	req = NewRequest("GET", "http://a.b?k0=v0", nil)
-	req.Param("k1", "v1")
+	req.AddParam("k1", "v11")
 	err = req.encodeUrl()
 	if err != nil {
 		t.Fatalf("#2: %v", err)
@@ -60,19 +38,11 @@ func TestEncodeUrl(t *testing.T) {
 	if !ok {
 		t.Fatal("#2: k1 not found")
 	}
-	if v[0] != "v1" {
-		t.Fatal("#2: k1 => %s, want v1", v)
-	}
-	v, ok = queries["k0"]
-	if !ok {
-		t.Fatal("#2: k0 not found")
-	}
-	if v[0] != "v0" {
-		t.Fatal("#2: k0 => %s, want v0", v)
+	if fmt.Sprintf("%v", v) != "[v1 v11]" {
+		t.Fatalf("#2: Req.URL.Query()[k1] => %v, want: [v1, v11]", v)
 	}
 
-	req = NewRequest("GET", "http://a.b?k0=v0", nil)
-	req.Param("k1", "vv1")
+	req.SetParam("k1", "vv1")
 	err = req.encodeUrl()
 	if err != nil {
 		t.Fatalf("#3: %v", err)
@@ -82,7 +52,58 @@ func TestEncodeUrl(t *testing.T) {
 	if !ok {
 		t.Fatal("#3: k1 not found")
 	}
-	if v[0] != "vv1" {
-		t.Fatal("#3: k1 => %s, want vv1", v)
+	if fmt.Sprintf("%v", v) != "[vv1]" {
+		t.Fatalf("#3: Req.URL.Query()[k1] => %v, want [vv1]", v)
+	}
+
+	req.DelParam("k1")
+	err = req.encodeUrl()
+	if err != nil {
+		t.Fatalf("#4: %v", err)
+	}
+	queries = req.Req.URL.Query()
+	v, ok = queries["k1"]
+	if ok {
+		t.Fatal("#4: k1 should not exist!")
+	}
+
+	req.DelParam("k")
+	err = req.encodeUrl()
+	if err != nil {
+		t.Fatalf("#5: %v", err)
+	}
+	queries = req.Req.URL.Query()
+	v, ok = queries["k"]
+	if ok {
+		t.Fatal("#5: k should not exist!")
+	}
+}
+
+func TestBody(t *testing.T) {
+	content := "body of the request."
+	r := NewRequest("Get", "http://httpbin.org")
+
+	r.SetBody(content, "text/plain")
+	body, err := ioutil.ReadAll(r.Req.Body)
+	if err != nil {
+		t.Fatal("#1: Body => %v", err)
+	}
+	if string(body) != content {
+		t.Errorf("#1: Body => %s, want %s.", string(body), content)
+	}
+	if r.Req.ContentLength != int64(len(content)) {
+		t.Errorf("#1: ContentLength => %d, want %d.", r.Req.ContentLength, len(content))
+	}
+
+	r.SetBody([]byte(content), "text/plain")
+	body, err = ioutil.ReadAll(r.Req.Body)
+	if err != nil {
+		t.Fatal("#2: Body() => %v", err)
+	}
+	if string(body) != content {
+		t.Errorf("#2: Body() => %s, want %s.", string(body), content)
+	}
+	if r.Req.ContentLength != int64(len(content)) {
+		t.Errorf("#2: ContentLength => %d, want %d.", r.Req.ContentLength, len(content))
 	}
 }

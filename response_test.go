@@ -61,8 +61,8 @@ func TestNewResponse(t *testing.T) {
 			continue
 		}
 		r := NewResponse(resp)
-		if r.Status != v.status {
-			t.Errorf("#%d.NewResponse(%s): Status = %d, want %d.", i, v.rawResp, r.Status, v.status)
+		if r.StatusCode != v.status {
+			t.Errorf("#%d.NewResponse(%s): StatusCode = %d, want %d.", i, v.rawResp, r.StatusCode, v.status)
 		}
 	}
 }
