@@ -107,7 +107,9 @@ func (r *HttpRequest) AllowRedirects(allow bool) {
 	if r.Client == nil {
 		r.Client = NewClient()
 	}
-	r.Client.AllowRedirects = allow
+	if !allow {
+		r.Client.ForbidRedirects()
+	}
 }
 
 func (r *HttpRequest) SetRedirectMax(count int) {
@@ -171,11 +173,7 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 	if r.Client == nil {
 		r.Client = NewClient()
 	}
-	resp, err := r.Client.Do(r.Req)
-	if err != nil {
-		return nil, err
-	}
-	return NewResponse(resp), nil
+	return r.Client.Do(r.Req)
 }
 
 func NewRequest(method, rawurl string) *HttpRequest {
