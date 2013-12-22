@@ -4,7 +4,7 @@ import (
 	"net/url"
 )
 
-var DefaultUserAgent = "GoRequests"
+var DefaultUserAgent = "Go Requests"
 
 func Request(method, url string) *HttpRequest {
 	var r = NewRequest(method, url)

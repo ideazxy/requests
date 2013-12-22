@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,11 +11,10 @@ import (
 )
 
 type HttpRequest struct {
-	URL              string
-	Req              *http.Request
-	Params           url.Values
-	ConnectTimeout   time.Duration
-	ReadWriteTimeout time.Duration
+	Client *Client
+	URL    string
+	Req    *http.Request
+	Params url.Values
 }
 
 // Get gets the first value associated with the given key.
@@ -62,7 +60,7 @@ func (r *HttpRequest) Param(key string) string {
 	}
 	return v[0]
 }
-	
+
 func (r *HttpRequest) SetParam(key, value string) *HttpRequest {
 	r.Params.Set(key, value)
 	return r
@@ -98,9 +96,25 @@ func (r *HttpRequest) AddCookie(c *http.Cookie) *HttpRequest {
 }
 
 func (r *HttpRequest) Timeout(connectTimeout, readWriteTimeout time.Duration) *HttpRequest {
-	r.ConnectTimeout = connectTimeout
-	r.ReadWriteTimeout = readWriteTimeout
+	if r.Client == nil {
+		r.Client = NewClient()
+	}
+	r.Client.SetTimeout(connectTimeout, readWriteTimeout)
 	return r
+}
+
+func (r *HttpRequest) AllowRedirects(allow bool) {
+	if r.Client == nil {
+		r.Client = NewClient()
+	}
+	r.Client.AllowRedirects = allow
+}
+
+func (r *HttpRequest) SetRedirectMax(count int) {
+	if r.Client == nil {
+		r.Client = NewClient()
+	}
+	r.Client.RedirectMax = count
 }
 
 func (r *HttpRequest) SetBody(data interface{}, bodyType string) *HttpRequest {
@@ -141,7 +155,7 @@ func (r *HttpRequest) encodeUrl() error {
 	}
 
 	r.Req.URL.RawQuery = r.Params.Encode()
-	
+
 	if !r.Req.URL.IsAbs() {
 		r.Req.URL.Scheme = "http"
 	}
@@ -154,12 +168,10 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 		return nil, err
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			Dial: TimeoutDialer(r.ConnectTimeout, r.ReadWriteTimeout),
-		},
+	if r.Client == nil {
+		r.Client = NewClient()
 	}
-	resp, err := client.Do(r.Req)
+	resp, err := r.Client.Do(r.Req)
 	if err != nil {
 		return nil, err
 	}
@@ -168,27 +180,15 @@ func (r *HttpRequest) Send() (*HttpResponse, error) {
 
 func NewRequest(method, rawurl string) *HttpRequest {
 	// URL will be validated in send():
-	req, _ := http.NewRequest(method, rawurl, nil)
+	req, _ := http.NewRequest(strings.ToUpper(method), rawurl, nil)
 
 	r := &HttpRequest{
+		nil,
 		rawurl,
 		req,
-		make(url.Values),
-		60 * time.Second,
-		60 * time.Second}
+		make(url.Values)}
 	if r.Req.URL != nil {
 		r.Params = r.Req.URL.Query()
 	}
 	return r
-}
-
-func TimeoutDialer(cTimeout time.Duration, rwTimeout time.Duration) func(net, addr string) (net.Conn, error) {
-	return func(netw, addr string) (net.Conn, error) {
-		conn, err := net.DialTimeout(netw, addr, cTimeout)
-		if err != nil {
-			return nil, err
-		}
-		conn.SetDeadline(time.Now().Add(rwTimeout))
-		return conn, nil
-	}
 }

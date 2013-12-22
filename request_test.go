@@ -1,10 +1,10 @@
 package requests
 
 import (
-	"testing"
-	"net/url"
 	"fmt"
 	"io/ioutil"
+	"net/url"
+	"testing"
 )
 
 func TestEncodeUrl(t *testing.T) {

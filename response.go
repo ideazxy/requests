@@ -9,26 +9,26 @@ import (
 )
 
 type HttpResponse struct {
-	Resp     *http.Response
-	StatusCode   int
-	cookies map[string]*http.Cookie
-	content  []byte
-	consumed bool
+	Resp       *http.Response
+	StatusCode int
+	cookies    map[string]*http.Cookie
+	content    []byte
+	consumed   bool
 }
 
 func NewResponse(resp *http.Response) *HttpResponse {
 	var r HttpResponse
 	r.Resp = resp
 	r.StatusCode = resp.StatusCode
-	
+
 	r.cookies = make(map[string]*http.Cookie)
 	cookies := r.Resp.Cookies()
-	if cookies != nil {		
+	if cookies != nil {
 		for _, v := range cookies {
 			r.cookies[v.Name] = v
 		}
 	}
-	
+
 	return &r
 }
 
