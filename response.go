@@ -9,12 +9,12 @@ import (
 )
 
 type HttpResponse struct {
-	Resp       *http.Response
-	StatusCode int
+	Resp              *http.Response
+	StatusCode        int
 	RedirectForbidden bool
-	cookies    map[string]*http.Cookie
-	content    []byte
-	consumed   bool
+	cookies           map[string]*http.Cookie
+	content           []byte
+	consumed          bool
 }
 
 func NewResponse(resp *http.Response) *HttpResponse {

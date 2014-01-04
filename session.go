@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"time"
@@ -8,7 +9,8 @@ import (
 
 type Session struct {
 	Client    *Client
-	userAgent string
+	UserAgent string
+	lastReq   *HttpRequest
 }
 
 func NewSession() *Session {
@@ -20,13 +22,37 @@ func NewSession() *Session {
 	return &Session{
 		client,
 		"Go Requests",
+		nil,
 	}
 }
 
 func (s *Session) Request(method, url string) *HttpRequest {
 	r := Request(method, url)
+	r.SetHeader("User-Agent", s.UserAgent)
 	r.Client = s.Client
+	s.lastReq = r
 	return r
+}
+
+func (s *Session) Cookies(url *url.URL) (cookies []*http.Cookie) {
+	if url == nil {
+		if s.lastReq == nil {
+			return cookies
+		}
+		url = s.lastReq.Req.URL
+	}
+	return s.Client.Jar.Cookies(url)
+}
+
+func (s *Session) Cookie(key string, url *url.URL) (cookie *http.Cookie) {
+	if cookies := s.Cookies(url); len(cookies) > 0 {
+		for _, c := range cookies {
+			if c.Name == key {
+				return c
+			}
+		}
+	}
+	return
 }
 
 func (s *Session) Get(url string) *HttpRequest {

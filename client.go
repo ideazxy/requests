@@ -23,8 +23,7 @@ func NewRedirectForbiddenError() *RedirectForbiddenError {
 type Client struct {
 	http.Client
 	forbidRedirects bool
-	RedirectMax    int
-	History        []*http.Response
+	RedirectMax     int
 }
 
 func NewClient() *Client {

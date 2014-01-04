@@ -12,7 +12,7 @@ import (
 
 type HttpRequest struct {
 	Client *Client
-	URL    string
+	rawUrl string
 	Req    *http.Request
 	Params url.Values
 }
@@ -103,20 +103,22 @@ func (r *HttpRequest) Timeout(connectTimeout, readWriteTimeout time.Duration) *H
 	return r
 }
 
-func (r *HttpRequest) AllowRedirects(allow bool) {
+func (r *HttpRequest) AllowRedirects(allow bool) *HttpRequest {
 	if r.Client == nil {
 		r.Client = NewClient()
 	}
 	if !allow {
 		r.Client.ForbidRedirects()
 	}
+	return r
 }
 
-func (r *HttpRequest) SetRedirectMax(count int) {
+func (r *HttpRequest) SetRedirectMax(count int) *HttpRequest {
 	if r.Client == nil {
 		r.Client = NewClient()
 	}
 	r.Client.RedirectMax = count
+	return r
 }
 
 func (r *HttpRequest) SetBody(data interface{}, bodyType string) *HttpRequest {
@@ -150,8 +152,20 @@ func (r *HttpRequest) SetBody(data interface{}, bodyType string) *HttpRequest {
 	return r
 }
 
+func (r *HttpRequest) Query() url.Values {
+	return r.Req.URL.Query()
+}
+
+func (r *HttpRequest) Path() string {
+	return r.Req.URL.Path
+}
+
+func (r *HttpRequest) Url() string {
+	return r.Req.URL.String()
+}
+
 func (r *HttpRequest) encodeUrl() error {
-	_, err := url.Parse(r.URL)
+	_, err := url.Parse(r.rawUrl)
 	if err != nil {
 		return err
 	}
@@ -164,8 +178,12 @@ func (r *HttpRequest) encodeUrl() error {
 	return nil
 }
 
+func (r *HttpRequest) Prepare() error {
+	return r.encodeUrl()
+}
+
 func (r *HttpRequest) Send() (*HttpResponse, error) {
-	err := r.encodeUrl()
+	err := r.Prepare()
 	if err != nil {
 		return nil, err
 	}
