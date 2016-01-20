@@ -1,4 +1,4 @@
-#Requests
+#Requests [![Build Status](https://travis-ci.org/ideazxy/requests.svg?branch=master)](https://travis-ci.org/ideazxy/requests)
 
 Simple HTTP library, do the same work as [Requests](https://github.com/kennethreitz/requests), but for Go.
 

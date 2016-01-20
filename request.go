@@ -95,11 +95,11 @@ func (r *HttpRequest) AddCookie(c *http.Cookie) *HttpRequest {
 	return r
 }
 
-func (r *HttpRequest) Timeout(connectTimeout, readWriteTimeout time.Duration) *HttpRequest {
+func (r *HttpRequest) Timeout(timeout time.Duration) *HttpRequest {
 	if r.Client == nil {
 		r.Client = NewClient()
 	}
-	r.Client.SetTimeout(connectTimeout, readWriteTimeout)
+	r.Client.SetTimeout(timeout)
 	return r
 }
 

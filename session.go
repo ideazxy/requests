@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"time"
 )
 
 type Session struct {
@@ -15,7 +14,6 @@ type Session struct {
 
 func NewSession() *Session {
 	client := NewClient()
-	client.SetTimeout(60*time.Second, 60*time.Second)
 	// Jar will store cookies
 	client.Jar, _ = cookiejar.New(nil)
 

@@ -55,17 +55,8 @@ func (c *Client) ForbidRedirects() {
 	c.forbidRedirects = true
 }
 
-func (c *Client) SetTimeout(connectTimeout, readWriteTimeout time.Duration) {
-	c.Transport = &http.Transport{
-		Dial: func(netw, addr string) (net.Conn, error) {
-			conn, err := net.DialTimeout(netw, addr, connectTimeout)
-			if err != nil {
-				return nil, err
-			}
-			conn.SetDeadline(time.Now().Add(readWriteTimeout))
-			return conn, nil
-		},
-	}
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.Timeout = timeout
 }
 
 func (c *Client) defaultCheckRedirect() func(req *http.Request, via []*http.Request) error {
